@@ -1,0 +1,56 @@
+﻿@{
+    ViewData["Title"] = "Property Lock Demo";
+}
+
+<h2>Property Lock Demo</h2>
+
+<input type="text" id="propertyId" placeholder="Enter Property ID" />
+<button id="lockBtn">Lock Property</button>
+<button id="unlockBtn">Unlock Property</button>
+
+<div id="status" style="margin-top:10px; font-weight:bold;"></div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/propertyLockHub")
+            .build();
+
+        connection.start().catch(err => console.error(err.toString()));
+
+        document.getElementById("lockBtn").addEventListener("click", () => {
+            const propertyId = document.getElementById("propertyId").value;
+            if (propertyId) {
+                connection.invoke("LockProperty", propertyId, "User1");
+            } else {
+                alert("Please enter a property ID");
+            }
+        });
+
+        document.getElementById("unlockBtn").addEventListener("click", () => {
+            const propertyId = document.getElementById("propertyId").value;
+            if (propertyId) {
+                connection.invoke("UnlockProperty", propertyId);
+            } else {
+                alert("Please enter a property ID");
+            }
+        });
+
+        connection.on("LockAcquired", (propertyId) => {
+            document.getElementById("status").innerText = `Lock acquired for ${propertyId}`;
+        });
+
+        connection.on("LockDenied", (propertyId) => {
+            document.getElementById("status").innerText = `Lock denied for ${propertyId}`;
+        });
+
+        connection.on("PropertyLocked", (propertyId, userName) => {
+            document.getElementById("status").innerText = `${userName} locked property ${propertyId}`;
+        });
+
+        connection.on("PropertyUnlocked", (propertyId) => {
+            document.getElementById("status").innerText = `Property ${propertyId} unlocked`;
+        });
+    </script>
+}
